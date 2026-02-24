@@ -41,6 +41,11 @@ path = "tests/integration/lib.rs"
 name = "e2e"
 path = "tests/e2e/mod.rs"
 
+[[test]]
+name = "vector_api"
+path = "tests/vector_api/lib.rs"
+required-features = ["vector-api-tests"]
+
 # CI-based builds use full release optimization. See scripts/environment/release-flags.sh.
 # This results in roughly a 5% reduction in performance when compiling locally vs when
 # compiled via the CI pipeline.
@@ -298,6 +303,7 @@ aws-smithy-types = { version = "1.2.11", default-features = false, features = ["
 
 # Azure
 azure_core = { version = "0.30", features = ["reqwest", "hmac_openssl"], optional = true }
+azure_identity = { version = "0.30", optional = true }
 
 # Azure Storage
 azure_storage_blob = { version = "0.7", optional = true }
@@ -307,7 +313,7 @@ opendal = { version = "0.54", default-features = false, features = ["services-we
 
 # Tower
 tower = { version = "0.5.2", default-features = false, features = ["buffer", "limit", "retry", "timeout", "util", "balance", "discover"] }
-tower-http = { version = "0.4.4", default-features = false, features = ["compression-full", "decompression-gzip", "trace"] }
+tower-http = { version = "0.4.4", default-features = false, features = ["compression-full", "decompression-full", "trace"] }
 # Serde
 serde.workspace = true
 serde-toml-merge = { version = "0.3.11", default-features = false }
@@ -450,7 +456,7 @@ byteorder = "1.5.0"
 windows-service = "0.8.0"
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.26.2", default-features = false, features = ["socket", "signal", "fs"] }
+nix = { version = "0.31", default-features = false, features = ["socket", "signal", "fs"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 netlink-packet-utils = "0.5.2"
@@ -491,9 +497,6 @@ wiremock = "0.6.4"
 zstd = { version = "0.13.0", default-features = false }
 
 [patch.crates-io]
-# The upgrade for `tokio-util` >= 0.6.9 is blocked on https://github.com/vectordotdev/vector/issues/11257.
-tokio-util = { git = "https://github.com/vectordotdev/tokio", branch = "tokio-util-0.7.13-framed-read-continue-on-error" }
-nix = { git = "https://github.com/vectordotdev/nix.git", branch = "memfd/gnu/musl" }
 # The `heim` crates depend on `ntapi` 0.3.7 on Windows, but that version has an
 # unaligned access bug fixed in the following revision.
 ntapi = { git = "https://github.com/MSxDOS/ntapi.git", rev = "24fc1e47677fc9f6e38e5f154e6011dc9b270da6" }
@@ -786,6 +789,7 @@ sinks-logs = [
   "sinks-aws_sqs",
   "sinks-axiom",
   "sinks-azure_blob",
+  "sinks-azure_logs_ingestion",
   "sinks-azure_monitor_logs",
   "sinks-blackhole",
   "sinks-chronicle",
@@ -853,6 +857,7 @@ sinks-aws_sqs = ["aws-core", "dep:aws-sdk-sqs"]
 sinks-aws_sns = ["aws-core", "dep:aws-sdk-sns"]
 sinks-axiom = ["sinks-http"]
 sinks-azure_blob = ["dep:azure_core", "dep:azure_storage_blob"]
+sinks-azure_logs_ingestion = ["dep:azure_core", "dep:azure_identity"]
 sinks-azure_monitor_logs = []
 sinks-blackhole = []
 sinks-chronicle = []
@@ -942,6 +947,7 @@ all-integration-tests = [
   "pulsar-integration-tests",
   "redis-integration-tests",
   "splunk-integration-tests",
+  "vector-api-tests",
   "webhdfs-integration-tests",
 ]
 
@@ -1040,6 +1046,9 @@ e2e-tests-opentelemetry = [
 ]
 
 vector-api-tests = [
+  "top",
+  "api",
+  "api-client-minimal",
   "sources-demo_logs",
   "transforms-log_to_metric",
   "transforms-remap",
